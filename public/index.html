@@ -94,23 +94,32 @@ curl -i https://cloud-practice.onrender.com/cookie/clear
 curl -i https://cloud-practice.onrender.com/cookie/require  # 다시 403</pre>
     </div>
 
-    <div class="card">
-      <h2>4) 파일 업로드</h2>
-      <p class="hint">단일/다중 업로드, 이미지 MIME 제한.</p>
-      <pre># 4-1) 단일 업로드 (필드명 file)
-curl -i -F "file=@./README.md" https://cloud-practice.onrender.com/upload
+<div class="card">
+  <h2>4) 파일 업로드(확장) – 폴더 선택 → 수정 → 업로드</h2>
+  <p class="hint">/tmp/uploads 아래 안전한 영역만 사용합니다.</p>
+  <pre># A. 폴더 생성/선택
+curl -X POST https://cloud-practice.onrender.com/fs/mkdir ^
+  -H "Content-Type: application/json" ^
+  -d "{\"dir\":\"classA\"}"
+curl "https://cloud-practice.onrender.com/fs/list?dir=classA"
 
-# 4-2) 여러 파일(최대 3개, 필드명 files)
-curl -i -F "files=@./a.txt" -F "files=@./b.txt" \
-  https://cloud-practice.onrender.com/uploads
+# B. 파일 수정(덮어쓰기)
+echo hello> note.txt
+curl -F "file=@note.txt" "https://cloud-practice.onrender.com/fs/upload?dir=classA"
+echo hello2> note.txt
+curl -X PUT --data-binary @note.txt ^
+  "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"
+curl "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"
 
-# 4-3) 이미지 전용 업로드 (필드명 image)
-curl -i -F "image=@./photo.png" https://cloud-practice.onrender.com/upload-image
-# 이미지가 아니면 400 + "Only image/* allowed"</pre>
-    </div>
-  </div>
+# C. 여러 파일 업로드(반복)
+for %f in (a.txt b.txt) do ^
+  curl -F "file=@%f" "https://cloud-practice.onrender.com/fs/upload?dir=classA"
 
-  <div class="grid">
+# D. 삭제
+curl -X DELETE "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"</pre>
+</div>
+
+<div class="grid">
     <div class="card">
       <h2>5) 지연 / 리다이렉트 / 상태코드</h2>
       <pre># 5-1) 1.5초 지연
@@ -164,3 +173,4 @@ curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
   <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
+
