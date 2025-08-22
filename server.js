@@ -109,4 +109,4 @@ app.get("/openapi.yaml", (_req, res) => res.sendFile(path.join(__dirname, "opena
 app.use("/", express.static(path.join(__dirname, "public")));
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`curl-lab listening on http://localhost:${port}`));
+app.listen(port, () => console.log(`listening on ${port}`));
