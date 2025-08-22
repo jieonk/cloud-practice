@@ -3,113 +3,146 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>cURL Lab</title>
+  <title>cURL Lab – cloud-practice</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; line-height: 1.6; }
-    code, pre { background:#f6f8fa; padding:2px 6px; border-radius:6px; }
-    pre { padding:12px; overflow:auto; }
-    h1 { margin-bottom: 0.2rem; }
-    .card { border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin:14px 0; box-shadow:0 1px 2px rgba(0,0,0,0.04);}
+    :root { --fg:#111; --muted:#6b7280; --card:#f6f8fa; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           color:var(--fg); max-width: 960px; margin: 40px auto; line-height: 1.6; padding: 0 16px; }
+    h1 { margin-bottom: 8px; } h2 { margin-top: 28px; }
+    p small{ color:var(--muted); }
+    code, pre { background: var(--card); border-radius: 8px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow:auto; }
+    .card { border:1px solid #e5e7eb; border-radius:14px; padding:16px; margin:16px 0;
+            box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    .hint { color:var(--muted); font-size:.95em; }
+    a { color:#2563eb; text-decoration:none; } a:hover{ text-decoration:underline; }
+    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); }
   </style>
 </head>
 <body>
   <h1>cURL Lab</h1>
-  <p>아래 엔드포인트로 마음껏 연습하세요. 
-     <b>IP당 전역 분당 120회</b>, <b>/limited는 분당 20회</b>로 제한됩니다.</p>
+  <p>이 서버는 cURL 실습을 위한 공개 엔드포인트를 제공합니다.
+     <b>전역 레이트리밋: 분당 120회</b>, <b>/limited: 분당 20회</b>.
+     <small class="hint">기본 도메인: <code>https://cloud-practice.onrender.com</code></small>
+  </p>
   <p><a href="/openapi.yaml">OpenAPI 스펙</a></p>
 
   <div class="card">
-    <h3>1) 에코</h3>
-    <pre>curl -i "https://cloud-practice.onrender.com/echo?role=student" -H "X-Lab: curl" -d "hello=world"</pre>
+    <h2>0) 빠른 시작</h2>
+    <pre>curl -i "https://cloud-practice.onrender.com/echo?role=student" -H "X-Lab: curl"</pre>
   </div>
 
-  <div class="card">
-    <h3>2) 기본 인증</h3>
-    <p>기본 계정: <code>admin/secret</code> (환경변수로 변경 가능)</p>
-    <pre>curl -i -u admin:secret https://cloud-practice.onrender.com/auth</pre>
+  <div class="grid">
+    <div class="card">
+      <h2>1) 에코 (GET/POST)</h2>
+      <p class="hint">보낸 메서드/헤더/쿼리/바디를 그대로 돌려줍니다.</p>
+      <pre># GET + 헤더
+curl -i "https://cloud-practice.onrender.com/echo?x=1" -H "X-Lab: curl"
+
+# POST (form)
+curl -i -X POST https://cloud-practice.onrender.com/echo -d "hello=world&n=1"
+
+# POST (JSON)
+curl -i -X POST https://cloud-practice.onrender.com/echo \
+  -H "Content-Type: application/json" \
+  -d "{\"user\":\"alice\",\"score\":99}"</pre>
+    </div>
+
+    <div class="card">
+      <h2>2) 기본 인증</h2>
+      <p class="hint">기본 계정: <code>admin/secret</code> (환경변수로 변경 가능)</p>
+      <pre>curl -i -u admin:secret https://cloud-practice.onrender.com/auth</pre>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>3) 파일 업로드</h3>
-    <pre>curl -i -F "file=@./README.md" https://cloud-practice.onrender.com/upload</pre>
+  <div class="grid">
+    <div class="card">
+      <h2>3) 쿠키 실습 (필수 동의 쿠키)</h2>
+      <p class="hint"><code>lab_consent=true</code> 쿠키가 없으면 403, 있으면 200.</p>
+      <pre># 3-1) 쿠키 없이 접근 → 403
+curl -i https://cloud-practice.onrender.com/cookie/require
+
+# 3-2) 서버가 쿠키 설정 → 200
+curl -i "https://cloud-practice.onrender.com/cookie/set?value=true"
+curl -i -b "lab_consent=true" https://cloud-practice.onrender.com/cookie/require
+
+# 3-3) 쿠키 파일(jar) 저장/재사용
+curl -c jar.txt "https://cloud-practice.onrender.com/cookie/set?value=true"
+curl -i -b jar.txt https://cloud-practice.onrender.com/cookie/require
+
+# 3-4) 쿠키 삭제
+curl -i https://cloud-practice.onrender.com/cookie/clear
+curl -i https://cloud-practice.onrender.com/cookie/require  # 다시 403</pre>
+    </div>
+
+    <div class="card">
+      <h2>4) 파일 업로드</h2>
+      <p class="hint">단일/다중 업로드, 이미지 MIME 제한.</p>
+      <pre># 4-1) 단일 업로드 (필드명 file)
+curl -i -F "file=@./README.md" https://cloud-practice.onrender.com/upload
+
+# 4-2) 여러 파일(최대 3개, 필드명 files)
+curl -i -F "files=@./a.txt" -F "files=@./b.txt" \
+  https://cloud-practice.onrender.com/uploads
+
+# 4-3) 이미지 전용 업로드 (필드명 image)
+curl -i -F "image=@./photo.png" https://cloud-practice.onrender.com/upload-image
+# 이미지가 아니면 400 + "Only image/* allowed"</pre>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>4) 지연/리다이렉트/상태</h3>
-    <pre>curl -i https://cloud-practice.onrender.com/delay/1500
+  <div class="grid">
+    <div class="card">
+      <h2>5) 지연 / 리다이렉트 / 상태코드</h2>
+      <pre># 5-1) 1.5초 지연
+curl -i https://cloud-practice.onrender.com/delay/1500
+
+# 5-2) 리다이렉트 (따라가기: -L)
 curl -iL https://cloud-practice.onrender.com/redirect
+
+# 5-3) 임의 상태코드
 curl -i https://cloud-practice.onrender.com/status/418</pre>
+    </div>
+
+    <div class="card">
+      <h2>6) 레이트 리밋 체험</h2>
+      <pre># Windows CMD
+for /L %i in (1,1,25) do @curl -s -o NUL -w "%%{http_code}\n" ^
+  https://cloud-practice.onrender.com/limited
+
+# PowerShell
+for ($i=1;$i -le 25;$i++) { curl -s -o $null -w "%{http_code}`n" `
+  https://cloud-practice.onrender.com/limited }
+
+# macOS/Linux (bash)
+for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" \
+  https://cloud-practice.onrender.com/limited; done</pre>
+    </div>
   </div>
 
   <div class="card">
-    <h3>5) 429 제한</h3>
-    <pre>for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" https://cloud-practice.onrender.com/limited; done</pre>
-  </div>
+    <h2>7) gzip / 페이지네이션</h2>
+    <pre># gzip (자동 해제: --compressed)
+curl -i --compressed https://cloud-practice.onrender.com/gzip
 
-  <div class="card">
-    <h3>6) gzip / 페이지네이션</h3>
-    <pre>curl -i --compressed https://cloud-practice.onrender.com/gzip
+# 페이지네이션
 curl -s "https://cloud-practice.onrender.com/items?page=3&size=5"</pre>
   </div>
 
   <div class="card">
-  <h3>1) 필수 쿠키 실습 (동의 쿠키)</h3>
-  <p><code>lab_consent=true</code> 쿠키가 없으면 403, 있으면 200을 반환합니다.</p>
-
-  <p><b>1-1) 쿠키 없이 접근 → 403</b></p>
-  <pre>curl -i https://cloud-practice.onrender.com/cookie/require</pre>
-
-  <p><b>1-2) 쿠키 설정 후 접근 → 200</b></p>
-  <pre># 서버에서 쿠키 발급
-curl -i "https://cloud-practice.onrender.com/cookie/set?name=lab_consent&value=true"
-# 같은 세션 유지하며 접근 (브라우저는 자동 전송, cURL은 -b/-c 옵션 사용)
-curl -i -b "lab_consent=true" https://cloud-practice.onrender.com/cookie/require</pre>
-
-  <p><b>1-3) 쿠키 저장/재사용 (cookie jar)</b></p>
-  <pre># 쿠키 파일에 저장하고 재사용
-curl -c jar.txt "https://cloud-practice.onrender.com/cookie/set?name=lab_consent&value=true"
-curl -b jar.txt https://cloud-practice.onrender.com/cookie/require</pre>
-
-  <p><b>1-4) 쿠키 삭제</b></p>
-  <pre>curl -i "https://cloud-practice.onrender.com/cookie/clear?name=lab_consent"
-curl -i https://cloud-practice.onrender.com/cookie/require  # 다시 403</pre>
-</div>
-
-<div class="card">
-  <h3>2) 파일 업로드 고급</h3>
-  <p>단일/다중 업로드, 이미지 MIME 제한을 실습합니다.</p>
-
-  <p><b>2-1) 단일 업로드 (기존)</b></p>
-  <pre>curl -i -F "file=@./README.md" https://cloud-practice.onrender.com/upload</pre>
-
-  <p><b>2-2) 여러 파일 업로드 (최대 3개)</b></p>
-  <pre>curl -i -F "files=@./a.txt" -F "files=@./b.txt" https://cloud-practice.onrender.com/uploads</pre>
-
-  <p><b>2-3) 이미지 전용 업로드 (이미지만 허용)</b></p>
-  <pre>curl -i -F "image=@./photo.png" https://cloud-practice.onrender.com/upload-image
-# 이미지가 아니면 400 + "Only image/* allowed"</pre>
-</div>
-
-<div class="card">
-  <h3>3) 쿠키 + 인증 조합</h3>
-  <p>동의 쿠키가 있는 상태에서 Basic 인증까지 요구하는 흐름은 cURL 옵션 조합 연습에 좋습니다.</p>
-  <pre># 동의 쿠키 저장 -> 인증 접근
-curl -c jar.txt "https://cloud-practice.onrender.com/cookie/set?name=lab_consent&value=true"
-curl -i -b jar.txt -u admin:secret https://cloud-practice.onrender.com/auth</pre>
-</div>
-
-<div class="card">
-  <h3>4) 트러블슈팅 팁</h3>
-  <pre># 상세한 요청/응답 보기
+    <h2>8) 트러블슈팅 팁</h2>
+    <pre># 상세 요청/응답 보기
 curl -v https://cloud-practice.onrender.com/echo
 
 # 헤더만 보기
 curl -I https://cloud-practice.onrender.com/status/418
 
-# 응답 본문을 파일로 저장
-curl -o out.json https://cloud-practice.onrender.com/echo?role=student</pre>
-</div>
+# 응답 저장
+curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
+    <p class="hint">첫 요청이 느리면 Free 플랜 슬립에서 깨어나는 중일 수 있습니다.</p>
+  </div>
 
+  <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
-
