@@ -8,7 +8,6 @@ import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import fs from "fs";
 import fsp from "fs/promises";
-import path from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -224,4 +223,5 @@ app.use("/", express.static(path.join(__dirname, "public")));
 // 서버 시작
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`listening on ${port}`));
+
 
