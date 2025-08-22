@@ -107,8 +107,7 @@ curl "https://cloud-practice.onrender.com/fs/list?dir=classA"
 echo hello> note.txt
 curl -F "file=@note.txt" "https://cloud-practice.onrender.com/fs/upload?dir=classA"
 echo hello2> note.txt
-curl -X PUT --data-binary @note.txt ^
-  "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"
+curl -v -T temp2.txt "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
 curl "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"
 
 # C. 여러 파일 업로드(반복)
@@ -173,4 +172,5 @@ curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
   <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
+
 
