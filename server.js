@@ -1,3 +1,4 @@
+// server.js
 import express from "express";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
@@ -34,13 +35,16 @@ app.use((req, res, next) => {
 });
 app.use(rateLimit({ windowMs: 60_000, max: 120, standardHeaders: true }));
 
+/** --- 헬스체크 --- */
+app.get("/ping", (_req, res) => res.send("pong"));
+
 /** --- API 엔드포인트 --- */
-// 에코
+// 1) 에코
 app.all("/echo", (req, res) => {
   res.json({ ok: true, method: req.method, path: req.path, headers: req.headers, query: req.query, body: req.body });
 });
 
-// 인증
+// 2) 기본 인증
 const USER = process.env.BASIC_USER || "admin";
 const PASS = process.env.BASIC_PASS || "secret";
 app.get("/auth", (req, res) => {
@@ -51,7 +55,7 @@ app.get("/auth", (req, res) => {
   return res.status(403).json({ ok: false, reason: "invalid credentials" });
 });
 
-// 파일 업로드
+// 3) 업로드(메모리)
 app.post("/upload", upload.single("file"), (req, res) => {
   res.json({ ok: true, filename: req.file?.originalname, size: req.file?.size, mimetype: req.file?.mimetype });
 });
@@ -71,7 +75,7 @@ app.post("/upload-image", (req, res) => {
   });
 });
 
-// 쿠키
+// 4) 쿠키
 app.get("/cookie/set", (req, res) => {
   const value = req.query.value || "true";
   res.cookie(CONSENT_COOKIE, value, { httpOnly: true, sameSite: "Lax", path: "/" });
@@ -88,7 +92,7 @@ app.get("/cookie/clear", (req, res) => {
   res.json({ ok: true, cleared: CONSENT_COOKIE });
 });
 
-// 기타 기능 (delay, redirect, status, limited, gzip, items)
+// 5) 기타
 app.get("/delay/:ms", (req, res) => { const ms = Math.min(parseInt(req.params.ms || "0", 10) || 0, 10000); setTimeout(() => res.json({ ok: true, delayed: ms }), ms); });
 app.get("/redirect", (_req, res) => res.redirect(302, "/echo?from=redirect"));
 app.get("/status/:code", (req, res) => { const n = Math.max(100, Math.min(599, parseInt(req.params.code, 10) || 200)); res.status(n).json({ ok: n < 400, status: n }); });
@@ -97,14 +101,12 @@ app.get("/limited", limiter20, (_req, res) => res.json({ ok: true, note: "rate-l
 app.get("/gzip", (_req, res) => { const payload = JSON.stringify({ hello: "world", ts: Date.now() }); zlib.gzip(payload, (_e, buf) => res.set("Content-Encoding", "gzip").type("application/json").send(buf)); });
 app.get("/items", (req, res) => { const page = Math.max(1, parseInt(req.query.page || "1", 10)); const size = Math.min(50, Math.max(1, parseInt(req.query.size || "5", 10))); const total = 42; const start = (page - 1) * size + 1; const items = Array.from({ length: size }, (_, i) => ({ id: start + i })); res.json({ page, size, total, items }); });
 
-// 경로 안전화 (디렉터리 탈출 방지)
-function safePath(userPath = ".") {
+// === File System Lab ===
+const safePath = (userPath = ".") => {
   const target = path.normalize(path.join(BASE_DIR, userPath));
   if (!target.startsWith(BASE_DIR)) throw new Error("Invalid path");
   return target;
-}
-
-// 디렉터리 생성: POST /fs/mkdir  { "dir": "classA" }
+};
 app.post("/fs/mkdir", async (req, res) => {
   try {
     const dir = String(req.body?.dir || "").trim();
@@ -112,82 +114,50 @@ app.post("/fs/mkdir", async (req, res) => {
     const full = safePath(dir);
     await fsp.mkdir(full, { recursive: true });
     res.json({ ok: true, dir, full });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
+  } catch (e) { res.status(400).json({ ok: false, error: String(e) }); }
 });
-
-// 디렉터리 목록: GET /fs/list?dir=classA
 app.get("/fs/list", async (req, res) => {
   try {
     const dir = req.query.dir ? String(req.query.dir) : ".";
     const full = safePath(dir);
     const entries = await fsp.readdir(full, { withFileTypes: true });
-    res.json({
-      ok: true,
-      cwd: dir,
-      items: await Promise.all(entries.map(async (ent) => {
-        const p = path.join(full, ent.name);
-        const st = await fsp.stat(p);
-        return { name: ent.name, isDir: ent.isDirectory(), size: st.size, mtime: st.mtimeMs };
-      }))
-    });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
+    res.json({ ok: true, cwd: dir, items: await Promise.all(entries.map(async (ent) => {
+      const p = path.join(full, ent.name);
+      const st = await fsp.stat(p);
+      return { name: ent.name, isDir: ent.isDirectory(), size: st.size, mtime: st.mtimeMs };
+    }))});
+  } catch (e) { res.status(400).json({ ok: false, error: String(e) }); }
 });
-
-// 업로드 저장 경로를 디렉터리별로: POST /fs/upload?dir=classA (필드명 file)
 const diskStorage = multer.diskStorage({
-  destination(req, file, cb) {
+  destination(req, _file, cb) {
     try {
       const dir = safePath(req.query.dir ? String(req.query.dir) : ".");
       fs.mkdirSync(dir, { recursive: true });
       cb(null, dir);
-    } catch (e) {
-      cb(e);
-    }
+    } catch (e) { cb(e); }
   },
-  filename(_req, file, cb) {
-    cb(null, file.originalname);
-  }
+  filename(_req, file, cb) { cb(null, file.originalname); }
 });
-const uploadDisk = multer({
-  storage: diskStorage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
-}).single("file");
-
+const uploadDisk = multer({ storage: diskStorage, limits: { fileSize: 5 * 1024 * 1024 } }).single("file");
 app.post("/fs/upload", (req, res) => {
   uploadDisk(req, res, (err) => {
     if (err) return res.status(400).json({ ok: false, error: String(err) });
-    res.json({
-      ok: true,
-      saved: path.join(String(req.query.dir || "."), req.file.originalname),
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    });
+    res.json({ ok: true, saved: path.join(String(req.query.dir || "."), req.file.originalname), size: req.file.size, mimetype: req.file.mimetype });
   });
 });
-
-// 파일 읽기: GET /fs/file?path=classA/notes.txt
 app.get("/fs/file", async (req, res) => {
   try {
     const p = req.query.path ? String(req.query.path) : "";
     if (!p) return res.status(400).json({ ok: false, error: "path required" });
     const full = safePath(p);
     res.sendFile(full);
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
+  } catch (e) { res.status(400).json({ ok: false, error: String(e) }); }
 });
-
-// 파일 덮어쓰기(수정): PUT /fs/file?path=classA/notes.txt   --data-binary @local.txt
 app.put("/fs/file", async (req, res) => {
   try {
     const p = req.query.path ? String(req.query.path) : "";
     if (!p) return res.status(400).json({ ok: false, error: "path required" });
     const full = safePath(p);
-    // 바디를 스트림으로 받아 그대로 저장
     await new Promise((resolve, reject) => {
       const ws = fs.createWriteStream(full);
       req.pipe(ws);
@@ -197,12 +167,8 @@ app.put("/fs/file", async (req, res) => {
     });
     const st = await fsp.stat(full);
     res.json({ ok: true, path: p, size: st.size, replaced: true });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
+  } catch (e) { res.status(400).json({ ok: false, error: String(e) }); }
 });
-
-// 파일 삭제: DELETE /fs/file?path=classA/old.txt
 app.delete("/fs/file", async (req, res) => {
   try {
     const p = req.query.path ? String(req.query.path) : "";
@@ -210,18 +176,19 @@ app.delete("/fs/file", async (req, res) => {
     const full = safePath(p);
     await fsp.unlink(full);
     res.json({ ok: true, deleted: p });
-  } catch (e) {
-    res.status(400).json({ ok: false, error: String(e) });
-  }
+  } catch (e) { res.status(400).json({ ok: false, error: String(e) }); }
 });
-
 
 // 정적 문서 & 스펙
 app.get("/openapi.yaml", (_req, res) => res.sendFile(path.join(__dirname, "openapi.yaml")));
 app.use("/", express.static(path.join(__dirname, "public")));
 
+/** 에러 핸들러 (JSON) */
+app.use((err, _req, res, _next) => {
+  console.error("ERROR:", err);
+  res.status(500).json({ ok: false, error: String(err) });
+});
+
 // 서버 시작
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`listening on ${port}`));
-
-
