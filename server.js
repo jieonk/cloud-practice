@@ -135,6 +135,44 @@ app.get("/cookie/clear", (req, res) => {
   res.json({ ok: true, cleared: name });
 });
 
+// 단일 파일은 이미 /upload 존재
+// 여러 파일 업로드: /uploads (최대 3개, 필드명 files)
+const multiUpload = upload.array("files", 3);
+app.post("/uploads", (req, res) => {
+  multiUpload(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: String(err) });
+    const files = (req.files || []).map(f => ({
+      field: f.fieldname,
+      filename: f.originalname,
+      size: f.size,
+      mimetype: f.mimetype,
+    }));
+    res.json({ ok: true, count: files.length, files });
+  });
+});
+
+// MIME 제한 예시: 이미지만 허용
+const imgOnly = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_req, file, cb) => {
+    if (/^image\//.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Only image/* allowed"));
+  }
+}).single("image");
+
+app.post("/upload-image", (req, res) => {
+  imgOnly(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: String(err) });
+    res.json({
+      ok: true,
+      filename: req.file?.originalname,
+      size: req.file?.size,
+      mimetype: req.file?.mimetype,
+    });
+  });
+});
+
+
 // OpenAPI 스펙 정적 제공 (선택)
 app.get("/openapi.yaml", (_req, res) => res.sendFile(path.join(__dirname, "openapi.yaml")));
 
@@ -146,5 +184,6 @@ app.listen(port, () => console.log(`listening on ${port}`));
 
 
 app.use((req, _res, next) => { console.log("HIT", req.method, req.url); next(); });
+
 
 
