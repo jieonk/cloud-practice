@@ -14,41 +14,42 @@
 </head>
 <body>
   <h1>cURL Lab</h1>
-  <p>아래 엔드포인트로 마음껏 연습하세요. <b>IP당 전역 분당 120회</b>, <b>/limited는 분당 20회</b>로 제한됩니다.</p>
+  <p>아래 엔드포인트로 마음껏 연습하세요. 
+     <b>IP당 전역 분당 120회</b>, <b>/limited는 분당 20회</b>로 제한됩니다.</p>
   <p><a href="/openapi.yaml">OpenAPI 스펙</a></p>
 
   <div class="card">
     <h3>1) 에코</h3>
-    <pre>curl -i "http://localhost:3000/echo?role=student" -H "X-Lab: curl" -d "hello=world"</pre>
+    <pre>curl -i "https://cloud-practice.onrender.com/echo?role=student" -H "X-Lab: curl" -d "hello=world"</pre>
   </div>
 
   <div class="card">
     <h3>2) 기본 인증</h3>
     <p>기본 계정: <code>admin/secret</code> (환경변수로 변경 가능)</p>
-    <pre>curl -i -u admin:secret http://localhost:3000/auth</pre>
+    <pre>curl -i -u admin:secret https://cloud-practice.onrender.com/auth</pre>
   </div>
 
   <div class="card">
     <h3>3) 파일 업로드</h3>
-    <pre>curl -i -F "file=@./README.md" http://localhost:3000/upload</pre>
+    <pre>curl -i -F "file=@./README.md" https://cloud-practice.onrender.com/upload</pre>
   </div>
 
   <div class="card">
     <h3>4) 지연/리다이렉트/상태</h3>
-    <pre>curl -i http://localhost:3000/delay/1500
-curl -iL http://localhost:3000/redirect
-curl -i http://localhost:3000/status/418</pre>
+    <pre>curl -i https://cloud-practice.onrender.com/delay/1500
+curl -iL https://cloud-practice.onrender.com/redirect
+curl -i https://cloud-practice.onrender.com/status/418</pre>
   </div>
 
   <div class="card">
     <h3>5) 429 제한</h3>
-    <pre>for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/limited; done</pre>
+    <pre>for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" https://cloud-practice.onrender.com/limited; done</pre>
   </div>
 
   <div class="card">
     <h3>6) gzip / 페이지네이션</h3>
-    <pre>curl -i --compressed http://localhost:3000/gzip
-curl -s "http://localhost:3000/items?page=3&size=5"</pre>
+    <pre>curl -i --compressed https://cloud-practice.onrender.com/gzip
+curl -s "https://cloud-practice.onrender.com/items?page=3&size=5"</pre>
   </div>
 </body>
 </html>
