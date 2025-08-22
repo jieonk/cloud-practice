@@ -104,11 +104,24 @@ curl -X POST https://cloud-practice.onrender.com/fs/mkdir ^
 curl "https://cloud-practice.onrender.com/fs/list?dir=classA"
 
 # B. 파일 수정(덮어쓰기)
-echo hello> note.txt
-curl -F "file=@note.txt" "https://cloud-practice.onrender.com/fs/upload?dir=classA"
-echo hello2> note.txt
-curl -v -T temp2.txt "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
-curl "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt"
+curl -X POST https://cloud-practice.onrender.com/fs/mkdir -H "Content-Type: application/json" -d "{\"dir\":\"classA\"}"
+
+curl "https://cloud-practice.onrender.com/fs/list?dir=classA"
+
+echo "first version" > temp.txt
+
+curl -F "file=@temp.txt" "https://cloud-practice.onrender.com/fs/upload?dir=classA"
+
+curl -s "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
+
+
+echo "second version" > temp2.txt
+
+curl -X PUT --data-binary "@temp2.txt" "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
+(curl -v -T temp2.txt "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
+)
+
+curl -s "https://cloud-practice.onrender.com/fs/file?path=classA/temp.txt"
 
 # C. 여러 파일 업로드(반복)
 for %f in (a.txt b.txt) do ^
@@ -172,5 +185,6 @@ curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
   <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
+
 
 
