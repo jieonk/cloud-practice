@@ -110,3 +110,7 @@ app.use("/", express.static(path.join(__dirname, "public")));
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`listening on ${port}`));
+
+
+app.use((req, _res, next) => { console.log("HIT", req.method, req.url); next(); });
+
