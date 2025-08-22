@@ -28,6 +28,24 @@
   </p>
   <p><a href="/openapi.yaml">OpenAPI 스펙</a></p>
 
+  <!-- -1) 기초 실습 (예열) -->
+  <div class="card">
+    <h2>-1) 기초 실습 (예열)</h2>
+    <p class="hint">cURL을 처음 써보는 분들을 위한 아주 기초 연습입니다.</p>
+    <pre># A) 단순 GET 요청 (HTML 받기)
+curl https://cloud-practice.onrender.com
+
+# B) 응답 헤더만 확인
+curl -I https://cloud-practice.onrender.com
+
+# C) 요청/응답 상세 보기 (-v)
+curl -v https://cloud-practice.onrender.com
+
+# D) 응답을 파일로 저장
+curl -o index.html https://cloud-practice.onrender.com</pre>
+  </div>
+
+  <!-- 0) 빠른 시작 -->
   <div class="card">
     <h2>0) 빠른 시작</h2>
     <pre>curl -i "https://cloud-practice.onrender.com/echo?role=student" -H "X-Lab: curl"</pre>
