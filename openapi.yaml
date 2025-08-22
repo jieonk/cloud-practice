@@ -1,0 +1,62 @@
+openapi: 3.0.3
+info:
+  title: cURL Lab API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /echo:
+    get:
+      summary: Echo request
+      responses: { "200": { description: OK } }
+    post:
+      summary: Echo POST
+      responses: { "200": { description: OK } }
+  /auth:
+    get:
+      summary: Basic auth example
+      responses:
+        "200": { description: OK }
+        "401": { description: Auth required }
+        "403": { description: Forbidden }
+  /upload:
+    post:
+      summary: Upload a file (multipart)
+      responses: { "200": { description: OK } }
+  /delay/{ms}:
+    get:
+      summary: Delayed response
+      parameters:
+        - in: path
+          name: ms
+          schema: { type: integer, maximum: 10000 }
+      responses: { "200": { description: OK } }
+  /redirect:
+    get: { summary: 302 redirect, responses: { "302": { description: Redirect } } }
+  /status/{code}:
+    get:
+      summary: Respond with chosen status
+      parameters:
+        - in: path
+          name: code
+          schema: { type: integer, minimum: 100, maximum: 599 }
+      responses: { "200": { description: Varies } }
+  /limited:
+    get:
+      summary: Rate-limited endpoint
+      responses:
+        "200": { description: OK }
+        "429": { description: Too Many Requests }
+  /gzip:
+    get: { summary: Gzip response, responses: { "200": { description: OK } } }
+  /items:
+    get:
+      summary: Pagination example
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 5 }
+      responses: { "200": { description: OK } }
