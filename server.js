@@ -102,6 +102,39 @@ app.get("/items", (req, res) => {
   res.json({ page, size, total, items });
 });
 
+// --- Cookie 실습용 엔드포인트 ---
+// 필수 동의 쿠키 이름
+const CONSENT_COOKIE = "lab_consent";
+
+// 1) 쿠키 설정 (path=/, httpOnly 옵션 예시)
+app.get("/cookie/set", (req, res) => {
+  const name = req.query.name || CONSENT_COOKIE;
+  const value = req.query.value || "true";
+  const httpOnly = (req.query.httpOnly || "true") === "true";
+  res.cookie(name, value, { httpOnly, sameSite: "Lax", path: "/" });
+  res.json({ ok: true, set: { name, value, httpOnly } });
+});
+
+// 2) 쿠키 요구: lab_consent=true 없으면 403
+app.get("/cookie/require", (req, res) => {
+  const v = req.cookies[CONSENT_COOKIE];
+  if (v !== "true") {
+    return res.status(403).json({
+      ok: false,
+      reason: `Cookie "${CONSENT_COOKIE}=true" is required`,
+      got: req.cookies || {},
+    });
+  }
+  res.json({ ok: true, note: "Consent cookie present" });
+});
+
+// 3) 특정 쿠키 삭제
+app.get("/cookie/clear", (req, res) => {
+  const name = req.query.name || CONSENT_COOKIE;
+  res.clearCookie(name, { path: "/" });
+  res.json({ ok: true, cleared: name });
+});
+
 // OpenAPI 스펙 정적 제공 (선택)
 app.get("/openapi.yaml", (_req, res) => res.sendFile(path.join(__dirname, "openapi.yaml")));
 
@@ -113,4 +146,5 @@ app.listen(port, () => console.log(`listening on ${port}`));
 
 
 app.use((req, _res, next) => { console.log("HIT", req.method, req.url); next(); });
+
 
