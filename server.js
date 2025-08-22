@@ -6,6 +6,7 @@ import morgan from "morgan";
 import zlib from "zlib";
 import path from "path";
 import { fileURLToPath } from "url";
+import cookieParser from "cookie-parser";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +18,35 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(morgan("combined"));                       // 요청 로그
 app.use(express.json());                           // JSON 바디 파서
 app.use(express.urlencoded({ extended: true }));   // 폼 바디 파서
+app.use(cookieParser());
+const CONSENT_COOKIE = "lab_consent";
+
+app.get("/cookie/set", (req, res) => {
+  const name = req.query.name || CONSENT_COOKIE;
+  const value = req.query.value || "true";
+  const httpOnly = (req.query.httpOnly || "true") === "true";
+  res.cookie(name, value, { httpOnly, sameSite: "Lax", path: "/" });
+  res.json({ ok: true, set: { name, value, httpOnly } });
+});
+
+app.get("/cookie/require", (req, res) => {
+  const cookies = req.cookies || {};         // 안전하게 기본값
+  const v = cookies[CONSENT_COOKIE];
+  if (v !== "true") {
+    return res.status(403).json({
+      ok: false,
+      reason: `Cookie "${CONSENT_COOKIE}=true" is required`,
+      got: cookies,
+    });
+  }
+  res.json({ ok: true, note: "Consent cookie present" });
+});
+
+app.get("/cookie/clear", (req, res) => {
+  const name = req.query.name || CONSENT_COOKIE;
+  res.clearCookie(name, { path: "/" });
+  res.json({ ok: true, cleared: name });
+});
 app.use((req, res, next) => {                      // CORS (실습 편의)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -184,6 +214,7 @@ app.listen(port, () => console.log(`listening on ${port}`));
 
 
 app.use((req, _res, next) => { console.log("HIT", req.method, req.url); next(); });
+
 
 
 
