@@ -138,7 +138,9 @@ curl -X DELETE "https://cloud-practice.onrender.com/fs/file?path=classA/note.txt
 curl -i https://cloud-practice.onrender.com/delay/1500
 
 # 5-2) 리다이렉트 (따라가기: -L)
-curl -iL https://cloud-practice.onrender.com/redirect
+curl -i https://cloud-practice.onrender.com/redirect
+
+curl -i -L https://cloud-practice.onrender.com/redirect
 
 # 5-3) 임의 상태코드
 curl -i https://cloud-practice.onrender.com/status/418</pre>
@@ -198,6 +200,7 @@ curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
   <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
+
 
 
 
