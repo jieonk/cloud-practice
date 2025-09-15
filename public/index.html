@@ -160,16 +160,29 @@ for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" \
     </div>
   </div>
 
-  <div class="card">
-    <h2>7) gzip / 페이지네이션</h2>
-    <pre># gzip (자동 해제: --compressed)
-curl -i --compressed https://cloud-practice.onrender.com/gzip
+<div class="card">
+  <h2>7) gzip / 페이지네이션</h2>
+  <pre># gzip 응답 확인
+# (1) 기본 호출: 자동 해제됨
+curl https://cloud-practice.onrender.com/gzip
+
+# (2) --compressed 옵션: 결과는 동일 (자동 해제된 JSON)
+curl --compressed https://cloud-practice.onrender.com/gzip
+
+# (3) --raw 옵션: 원본 gzip 바이트 출력 (터미널에선 깨져 보임)
+curl --raw https://cloud-practice.onrender.com/gzip
+
+# (4) 파일로 저장 후 직접 해제 (Linux/macOS)
+curl -o out.gz https://cloud-practice.onrender.com/gzip
+gunzip -c out.gz
 
 # 페이지네이션
-curl -s "https://cloud-practice.onrender.com/items?page=3&size=5"</pre>
-  </div>
+curl -s "https://cloud-practice.onrender.com/items?page=3&size=5"
+</pre>
+</div>
 
-  <div class="card">
+
+<div class="card">
     <h2>8) 트러블슈팅 팁</h2>
     <pre># 상세 요청/응답 보기
 curl -v https://cloud-practice.onrender.com/echo
@@ -185,6 +198,7 @@ curl -o out.json "https://cloud-practice.onrender.com/echo?x=1"</pre>
   <p class="hint">© cURL Lab. 교육/실습 목적으로만 사용하세요.</p>
 </body>
 </html>
+
 
 
 
